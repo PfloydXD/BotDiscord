@@ -1,15 +1,17 @@
-const Discord = require('discord.js');
-const client = new Discord.Client();
-const config = require('./config.json');
+const Discord = require("discord.js");
+const client  = new Discord.Client();
+const config  = require("./config.json");
+const path    = require("path");
+const fs      = require("fs");
 
 client.on("ready", () => {
-    console.log(`Pai ta on :), em ${client.channels.size} canais, em ${client.guilds.size} servidores, com ${client.users.size} usuarios.`);
-    client.user.setActivity(`Eu estou em ${client.guilds.size} servidores`);
+    console.log(`Pai ta on :), em ${client.channels.cache.size} canais, em ${client.guilds.cache.size} servidores, com ${client.users.cache.size} usuarios.`);
+    client.user.setActivity(`Eu estou em ${client.guilds.cache.size} servidores`);
 });
 
 client.on("guildCreate", guild => {
     console.log(`O Bot entrou no servidor: ${guild.name} (id: ${guild.id}). População: ${guild.memberCount} membros!`);
-    client.user.setActivity(`Estou em ${client.guilds.size} servidores`)
+    client.user.setActivity(`Estou em ${client.guilds.cache.size} servidores`)
 });
 
 client.on("message", async message => {
@@ -17,13 +19,23 @@ client.on("message", async message => {
     if(message.channel.type === "dm") return;
     if(!message.content.startsWith(config.prefix)) return;
 
-  const args = message.content.slice(config.prefix.length).trim().split(/ +/g);
-  const comando = args.shift().toLowerCase();
-  
-  if(comando === "ping") {
-    const m = await message.channel.send("Ping?");
-    m.edit(`Pong! A Latência é ${m.createdTimestamp - message.createdTimestamp}ms. A Latencia da API é ${Math.round(client.ping)}ms`);
-  }
+    const args = message.content.slice(config.prefix.length).trim().split(/ +/g);
+    const comando = args.shift().toLowerCase();
+ 
+    let command = message.content.split(" ")[0];
+    command = command.slice(config.prefix.length);
+ 
+    if(comando === "ping") {
+        const m = await message.channel.send("Ping?");
+        m.edit(`Pong! A Latência é ${m.createdTimestamp - message.createdTimestamp}ms. A Latencia da API é ${Math.round(client.ping)}ms`);
+    }
+
+    try {
+        let commandFile = require(`./commands/${command}.js`);
+        commandFile.run(client, message, args);
+    } catch (err) {
+        console.error(err);
+    }
 });
 
 client.on('message', msg => {
